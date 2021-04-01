@@ -1,0 +1,17 @@
+{
+  "name": "governance_tool",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "dotenv": "^8.2.0",
+    "ethers": "^5.0.12"
+  },
+  "dependencies": {
+    "yargs": "^16.2.0"
+  }
+}
