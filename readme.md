@@ -1,3 +1,9 @@
+# Guide:
+
+1. Edit the `config/.env.example` with your ethereum node url, private key and Smart contract address and save it as `config/.env`
+2. `npm install`
+3. `node src/biddingCLI.js <command> <options>`
+
 ## Examples
 
 ### register

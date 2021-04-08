@@ -1,8 +1,6 @@
 const path = require("path");
 require("dotenv").config({path:path.join(__dirname, "../config/.env")});
 const { ethers } = require("ethers");
-const pathDeployOutputParameters = path.join(__dirname, "../config/deploy_output.json");
-const deployOutputParameters = require(pathDeployOutputParameters);
 
 var yargs = require("yargs")
   .usage(`
@@ -78,10 +76,10 @@ async function main() {
  
   // get auction protocol
   const artifactAuction = require(path.join(__dirname, `../config/artifacts/HermezAuctionProtocol.json`))
-  const HermezAuctionContract = new ethers.Contract(deployOutputParameters.hermezAuctionProtocolAddress, artifactAuction.abi, provider);
+  const HermezAuctionContract = new ethers.Contract(process.env.HERMEZ_AUCTION_ADDRESS, artifactAuction.abi, provider);
 
   const artifactHEZ= require(path.join(__dirname, `../config/artifacts/ERC20Permit.json`))
-  const HezContract = new ethers.Contract(deployOutputParameters.HEZTokenAddress, artifactHEZ.abi, provider);
+  const HezContract = new ethers.Contract(process.env.HEZ_TOKEN_ADDRESS, artifactHEZ.abi, provider);
 
   checkInputsCLI();
   if(command === "REGISTER") {
@@ -176,9 +174,9 @@ function checkInputsCLI() {
     break;
   case undefined:
     yargs.showHelp();
-    throw new Error("A valid command must be used");
+    break;
   default:
-    throw new Error(`${command} is not valid`);
+    yargs.showHelp();
   }
 }
 
