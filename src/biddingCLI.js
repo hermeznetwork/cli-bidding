@@ -8,6 +8,13 @@ cli <command> <options>
 
 commands
 ========
+    cli slotinfo
+        get information about slots and current bidding price
+    --startingSlot <slot>
+        first slot to check current bidding price
+    --endingSlot <slot>
+        last slot to check current bidding price
+
     cli register
         register a coordinator
     --url <URL>
@@ -23,6 +30,8 @@ commands
         enable permit feature (default true)
     --amount <amount>
         amount of tokens to transfer to the Auction
+    --units <units>
+        units in wich the minBid, maxBid, amount and bidAmount are expressed: wei or ether supported  (default wei)
 
     cli multibid <options>
         bid multiple slots
@@ -40,12 +49,13 @@ commands
         enable permit feature (default true)
     --amount <amount>
         amount of tokens to transfer to the Auction
-
+    --units <units>
+        units in wich the minBid, maxBid, amount and bidAmount are expressed: wei or ether supported  (default wei)
     cli getclaimablehez
         know how much HEZ tokens are pending to be claimed
-
     cli claimhez
         distribute the tokens pending to be claimed`)
+
 .option("s", { alias: "slot", describe: "slot number to bid", type: "string", demandOption: false })
 .option("b", { alias: "bidAmount", describe: "token address", type: "string", demandOption: false })
 .option("a", { alias: "amount", describe: "amount of tokens to transfer to the Auction", type: "string", demandOption: false })
@@ -54,7 +64,8 @@ commands
 .option("ss", { alias: "slotSets", describe: "set of slots to which the coordinator wants to bid", type: "string", demandOption: false })
 .option("max", { alias: "maxBid", describe: "maximum bid that is allowed", type: "string", demandOption: false })
 .option("min", { alias: "minBid", describe: "minimum that you want to bid", type: "string", demandOption: false })
-.option("p", { alias: "usePermit", describe: " enable permit feature (default true)", type: "boolean", demandOption: false, default: true });
+.option("p", { alias: "usePermit", describe: " enable permit feature (default true)", type: "boolean", demandOption: false, default: true })
+.option("u", { alias: "units", describe: "choose unit type, wei or ether supported", type: "string", demandOption: false, default: "wei" });
 
 
 const argv = yargs.argv;
@@ -69,6 +80,7 @@ const slotSets = argv.slotSets ? slotSets.split(",") : [true, true, true, true, 
 const maxBid = argv.maxBid;
 const minBid = argv.minBid;
 const usePermit = argv.usePermit;
+const units = argv.units;
 
 async function main() {
   const provider = new ethers.providers.JsonRpcProvider(process.env.NODE_ETHEREUM_URL);
@@ -81,14 +93,31 @@ async function main() {
   const artifactHEZ= require(path.join(__dirname, `../config/artifacts/ERC20Permit.json`))
   const HezContract = new ethers.Contract(process.env.HEZ_TOKEN_ADDRESS, artifactHEZ.abi, provider);
 
+  const network = await provider.getNetwork();
   checkInputsCLI();
+
+  if(command === "SLOTINFO") {
+    const currentSlot = (await HermezAuctionContract.getCurrentSlotNumber()).toNumber();
+    const closedSlots =  await HermezAuctionContract.getClosedAuctionSlots()
+    console.log("Current slot: ", currentSlot);
+    console.log("Closed slots: ", closedSlots);
+    console.log("First biddable slot:", currentSlot + closedSlots);
+
+
+    if (startingSlot && endingSlot) {
+      for(let i = startingSlot; i <= endingSlot; i++) {
+        const currentMinBid = (await HermezAuctionContract.getMinBidBySlot(i)).toString()
+        console.log(`Minimum bid for ${i}: ${ethers.utils.formatEther(currentMinBid)} HEZ`)
+      }
+    }
+  }
+
   if(command === "REGISTER") {
     // register coordinator
     const res = await HermezAuctionContract
       .connect(wallet)
       .setCoordinator(wallet.address, url);
-
-    console.log(await res.wait());
+      printEtherscanTx(res, network.chainId);
   }
 
   let dataPermit;
@@ -97,13 +126,24 @@ async function main() {
     const nonce = await HezContract.nonces(wallet.getAddress());
     const deadline = ethers.constants.MaxUint256;
 
+    let amountUnits = amount
+    let bidAmountUnits = bidAmount
+    let maxBidUnits = maxBid
+    let minBidUnits = minBid
+    if (units == "ether") {
+      amountUnits = ethers.utils.parseEther(amount);
+      bidAmountUnits = ethers.utils.parseEther(bidAmount);
+      maxBidUnits = ethers.utils.parseEther(maxBid);
+      minBidUnits = ethers.utils.parseEther(minBid);
+    }
+
     dataPermit = "0x";
     if(usePermit) {
       const {v,r,s} = await createPermitSignature(
         HezContract,
         wallet,
         HermezAuctionContract.address,
-        amount,
+        amountUnits,
         nonce,
         deadline
       );
@@ -116,7 +156,7 @@ async function main() {
       dataPermit = iface.encodeFunctionData("permit", [
         wallet.address,
         HermezAuctionContract.address,
-        amount,
+        amountUnits,
         deadline,
         v,
         r,
@@ -127,25 +167,25 @@ async function main() {
 
   if(command === "BID") {
     const res = await HermezAuctionContract.connect(wallet).processBid(
-      amount, 
+      amountUnits, 
       slot,
-      bidAmount,
+      bidAmountUnits,
       dataPermit
     );
-    console.log(await res.wait());
+    printEtherscanTx(res, network.chainId);
   }
   else if(command === "MULTIBID") {
     const res = await HermezAuctionContract.connect(wallet).processMultiBid(
-      amount, 
+      amountUnits, 
       startingSlot,
       endingSlot,
       slotSets,
-      maxBid,
-      minBid,
+      maxBidUnits,
+      minBidUnits,
       dataPermit
     );
 
-    console.log(await res.wait());
+    printEtherscanTx(res, network.chainId);
   }
   else if(command === "GETCLAIMABLEHEZ") {
     const res = await HermezAuctionContract.connect(wallet).getClaimableHEZ(wallet.address);
@@ -172,13 +212,13 @@ function checkInputsCLI() {
     break;
   case "CLAIMHEZ":
     break;
-  case undefined:
-    yargs.showHelp();
+  case "SLOTINFO":
     break;
   default:
     yargs.showHelp();
   }
 }
+
 
 function checkParamsRegister() {
   checkParam(url, "url");
@@ -188,6 +228,10 @@ function checkParamsBid() {
   checkParam(amount, "amount");
   checkParam(slot, "slot");
   checkParam(bidAmount, "bidAmount");
+  if (units != "wei" && units != "ether") {
+    throw new Error("units must be ether or wei, default: wei");
+  }
+  
 }
 
 function checkParamsMultiBid() {
@@ -198,6 +242,10 @@ function checkParamsMultiBid() {
   checkParam(minBid, "minBid");
   checkParam(slotSets, "slotSets");
 
+  if (units != "wei" && units != "ether") {
+    throw new Error("units must be ether or wei, default: wei");
+  }
+  
   if(slotSets.length != 6) {
     console.log("slotSets must have 6 positions\n\n");
     throw new Error("Incorrect parameters");
@@ -220,6 +268,21 @@ main()
     process.exit(1);
   });
 
+function printEtherscanTx(res, chainId) {
+  if(chainId == 1) {
+    console.log("Transaction submitted, you can see it here:")
+    console.log(`https://etherscan.io/tx/${res.hash}`)
+  } else if(chainId == 4) {
+    console.log("Transaction submitted, you can see it here:")
+    console.log(`https://rinkeby.etherscan.io/tx/${res.hash}`)
+  } else if(chainId == 5) {
+    console.log("Transaction submitted, you can see it here:")
+    console.log(`https://goerli.etherscan.io/tx/${res.hash}`)
+  } else {
+    console.log("Transaction receipt")
+    printEtherscanTx(res, network.chainId);
+  }
+}  
 
 async function createPermitSignature(hardhatToken, wallet, spenderAddress, value, nonce, deadline) {
   const digest = await createPermitDigest(
