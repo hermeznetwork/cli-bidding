@@ -71,16 +71,24 @@ commands
 const argv = yargs.argv;
 const command = argv._[0] === undefined ? undefined: argv._[0].toUpperCase();
 const url = argv.url;
-const amount = argv.amount;
 const slot = argv.slot;
-const bidAmount = argv.bidAmount;
 const startingSlot = argv.startingSlot;
 const endingSlot = argv.endingSlot;
 const slotSets = argv.slotSets ? slotSets.split(",") : [true, true, true, true, true, true];;
-const maxBid = argv.maxBid;
-const minBid = argv.minBid;
 const usePermit = argv.usePermit;
 const units = argv.units;
+
+let amount = argv.amount;
+let bidAmount = argv.bidAmount;
+let maxBid = argv.maxBid;
+let minBid = argv.minBid;
+
+if (units == "ether") {
+  amount = amount ? ethers.utils.parseEther(amount) : undefined;
+  bidAmount = bidAmount ? ethers.utils.parseEther(bidAmount): undefined;
+  maxBid = maxBid ? ethers.utils.parseEther(maxBid) : undefined;
+  minBid = minBid ? ethers.utils.parseEther(minBid) : undefined;
+}
 
 async function main() {
   const provider = new ethers.providers.JsonRpcProvider(process.env.NODE_ETHEREUM_URL);
@@ -99,13 +107,20 @@ async function main() {
   if(command === "SLOTINFO") {
     const currentSlot = (await HermezAuctionContract.getCurrentSlotNumber()).toNumber();
     const closedSlots =  await HermezAuctionContract.getClosedAuctionSlots()
+    const firstBiddableSlot = currentSlot + closedSlots + 1
     console.log("Current slot: ", currentSlot);
     console.log("Closed slots: ", closedSlots);
-    console.log("First biddable slot:", currentSlot + closedSlots);
+    console.log("First biddable slot:", firstBiddableSlot);
 
 
     if (startingSlot && endingSlot) {
       for(let i = startingSlot; i <= endingSlot; i++) {
+        const currentMinBid = (await HermezAuctionContract.getMinBidBySlot(i)).toString()
+        console.log(`Minimum bid for ${i}: ${ethers.utils.formatEther(currentMinBid)} HEZ`)
+      }
+    } else {
+      console.log("First 5 biddable slots:");
+      for(let i = firstBiddableSlot; i < firstBiddableSlot + 5; i++) {
         const currentMinBid = (await HermezAuctionContract.getMinBidBySlot(i)).toString()
         console.log(`Minimum bid for ${i}: ${ethers.utils.formatEther(currentMinBid)} HEZ`)
       }
@@ -120,30 +135,18 @@ async function main() {
       printEtherscanTx(res, network.chainId);
   }
 
-  let dataPermit;
+  let dataPermit = "0x";
+
   if(command === "BID" || command === "MULTIBID") {
     // Create Permit Signature
     const nonce = await HezContract.nonces(wallet.getAddress());
     const deadline = ethers.constants.MaxUint256;
-
-    let amountUnits = amount
-    let bidAmountUnits = bidAmount
-    let maxBidUnits = maxBid
-    let minBidUnits = minBid
-    if (units == "ether") {
-      amountUnits = ethers.utils.parseEther(amount);
-      bidAmountUnits = ethers.utils.parseEther(bidAmount);
-      maxBidUnits = ethers.utils.parseEther(maxBid);
-      minBidUnits = ethers.utils.parseEther(minBid);
-    }
-
-    dataPermit = "0x";
     if(usePermit) {
       const {v,r,s} = await createPermitSignature(
         HezContract,
         wallet,
         HermezAuctionContract.address,
-        amountUnits,
+        amount,
         nonce,
         deadline
       );
@@ -156,7 +159,7 @@ async function main() {
       dataPermit = iface.encodeFunctionData("permit", [
         wallet.address,
         HermezAuctionContract.address,
-        amountUnits,
+        amount,
         deadline,
         v,
         r,
@@ -167,21 +170,21 @@ async function main() {
 
   if(command === "BID") {
     const res = await HermezAuctionContract.connect(wallet).processBid(
-      amountUnits, 
+      amount, 
       slot,
-      bidAmountUnits,
+      bidAmount,
       dataPermit
     );
     printEtherscanTx(res, network.chainId);
   }
   else if(command === "MULTIBID") {
     const res = await HermezAuctionContract.connect(wallet).processMultiBid(
-      amountUnits, 
+      amount, 
       startingSlot,
       endingSlot,
       slotSets,
-      maxBidUnits,
-      minBidUnits,
+      maxBid,
+      minBid,
       dataPermit
     );
 

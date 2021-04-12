@@ -1,8 +1,17 @@
-# Guide:
+# Quick Guide:
 
-1. Edit the `config/.env.example` with your ethereum node url, private key and Smart contract address and save it as `config/.env`
+1. Edit the `config/.env.example` with your ethereum node url, private key of the bidded account and Smart contract address and save it as `config/.env`
+```
+    NODE_ETHEREUM_URL=<you_ethereum_node>
+    PRIVATE_KEY_CLI_BIDDING=<your_private_key>
+    HERMEZ_AUCTION_ADDRESS=<Hermez_auction_address>
+    HEZ_TOKEN_ADDRESS=<Hez_token_address>
+```
 2. `npm install`
-3. `node src/biddingCLI.js <command> <options>`
+3. `node src/biddingCLI.js register --url http://www.example.comss`
+4. `node src/biddingCLI.js register --url http://www.example.comss`
+5. `node src/biddingCLI.js slotinfo`
+6. `node src/biddingCLI.js bid --amount Y --slot X --bidAmount Y --units ether`
 
 ## Examples
 
