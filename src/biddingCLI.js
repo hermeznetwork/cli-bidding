@@ -8,20 +8,20 @@ cli <command> <options>
 
 commands
 ========
-    cli slotinfo
-        get information about slots and current bidding price
-    --startingSlot <slot>
-        first slot to check current bidding price
-    --endingSlot <slot>
-        last slot to check current bidding price
-
     cli register
-        register a coordinator
+       Register a coordinator in the auction
     --url <URL>
         coordinator URL
 
+    cli slotinfo
+        Display the information regarding the current open slots and current bidding price
+      --startingSlot <slot>
+          first slot to check current bidding price
+      --endingSlot <slot>
+          last slot to check current bidding price
+  
     cli bid <options>
-        bid to single slot
+        Bid for a slot
     --slot <slot>
         slot number to bid
     --bidAmount <amount>
@@ -31,10 +31,10 @@ commands
     --amount <amount>
         amount of tokens to transfer to the Auction
     --units <units>
-        units in wich the minBid, maxBid, amount and bidAmount are expressed: wei or ether supported  (default wei)
+        units in wich the minBid, maxBid, amount and bidAmount are expressed: wei or ether supported  (default ether)
 
     cli multibid <options>
-        bid multiple slots
+        Bid for multiple slots
     --startingSlot <slot>
         first slot to bid
     --endingSlot <slot>
@@ -50,22 +50,26 @@ commands
     --amount <amount>
         amount of tokens to transfer to the Auction
     --units <units>
-        units in wich the minBid, maxBid, amount and bidAmount are expressed: wei or ether supported  (default wei)
-    cli getclaimablehez
-        know how much HEZ tokens are pending to be claimed
-    cli claimhez
-        distribute the tokens pending to be claimed`)
+        units in wich the minBid, maxBid, amount and bidAmount are expressed: wei or ether supported  (default ether)
+  
+    cli getHezBalances
+        Display the current HEZ balance of the ethereum account and inside the HermezAuction contract
 
+    cli claimhez
+      Claim the pending HEZ inside HermezAuction contract
+`)
+
+.option("url", { alias: "url", describe: "url of the coordinator", type: "string", demandOption: false })
 .option("s", { alias: "slot", describe: "slot number to bid", type: "string", demandOption: false })
 .option("b", { alias: "bidAmount", describe: "token address", type: "string", demandOption: false })
 .option("a", { alias: "amount", describe: "amount of tokens to transfer to the Auction", type: "string", demandOption: false })
-.option("s", { alias: "startingSlot", describe: "first slot to bid", type: "string", demandOption: false})
+.option("st", { alias: "startingSlot", describe: "first slot to bid", type: "string", demandOption: false})
 .option("e", { alias: "endingSlot", describe: "last slot to bid", type: "string", demandOption: false})
-.option("ss", { alias: "slotSets", describe: "set of slots to which the coordinator wants to bid", type: "string", demandOption: false })
+.option("ss", { alias: "slotSets", describe: "set of slots which the coordinator wants to bid", type: "string", demandOption: false })
 .option("max", { alias: "maxBid", describe: "maximum bid that is allowed", type: "string", demandOption: false })
 .option("min", { alias: "minBid", describe: "minimum that you want to bid", type: "string", demandOption: false })
-.option("p", { alias: "usePermit", describe: " enable permit feature (default true)", type: "boolean", demandOption: false, default: true })
-.option("u", { alias: "units", describe: "choose unit type, wei or ether supported", type: "string", demandOption: false, default: "wei" });
+.option("p", { alias: "usePermit", describe: "enable permit feature (default true)", type: "boolean", demandOption: false, default: true })
+.option("u", { alias: "units", describe: "choose unit type, wei or ether supported", type: "string", demandOption: false, default: "ether" });
 
 
 const argv = yargs.argv;
@@ -169,34 +173,55 @@ async function main() {
   }
 
   if(command === "BID") {
-    const res = await HermezAuctionContract.connect(wallet).processBid(
-      amount, 
-      slot,
-      bidAmount,
-      dataPermit
-    );
-    printEtherscanTx(res, network.chainId);
+    try {
+      const res = await HermezAuctionContract.connect(wallet).processBid(
+        amount, 
+        slot,
+        bidAmount,
+        dataPermit
+      );
+      printEtherscanTx(res, network.chainId);
+    } catch (error) {
+      console.log("gas estimation failed")
+      const jsonError = JSON.parse(error.error.error.body);
+      throw new Error(jsonError.error.message);
+    } 
   }
   else if(command === "MULTIBID") {
-    const res = await HermezAuctionContract.connect(wallet).processMultiBid(
-      amount, 
-      startingSlot,
-      endingSlot,
-      slotSets,
-      maxBid,
-      minBid,
-      dataPermit
-    );
-
-    printEtherscanTx(res, network.chainId);
+    try {
+      const res = await HermezAuctionContract.connect(wallet).processMultiBid(
+        amount, 
+        startingSlot,
+        endingSlot,
+        slotSets,
+        maxBid,
+        minBid,
+        dataPermit
+      );
+      printEtherscanTx(res, network.chainId);
+    } catch (error) {
+      console.log("gas estimation failed")
+      const jsonError = JSON.parse(error.error.error.body);
+      throw new Error(jsonError.error.message);
+    }
   }
-  else if(command === "GETCLAIMABLEHEZ") {
-    const res = await HermezAuctionContract.connect(wallet).getClaimableHEZ(wallet.address);
-    console.log(res.toString());
+  else if(command === "GETHEZBALANCES") {
+
+    const accountHez = await HezContract.connect(wallet).balanceOf(wallet.address);
+    const auctionHez= await HermezAuctionContract.connect(wallet).pendingBalances(wallet.address);
+
+    console.log(`Account balance HEZ: ${ethers.utils.formatEther(accountHez)}`);
+    console.log(`Auction balance HEZ: ${ethers.utils.formatEther(auctionHez)}`);
   }
   else if(command === "CLAIMHEZ") {
-    const res = await HermezAuctionContract.connect(wallet).claimHEZ();
-    console.log(await res.wait())
+    try {
+      const res = await HermezAuctionContract.connect(wallet).claimHEZ();
+      printEtherscanTx(res, network.chainId);
+    } catch (error) {
+      console.log("gas estimation failed")
+      const jsonError = JSON.parse(error.error.error.body);
+      throw new Error(jsonError.error.message);
+    } 
   }
 }
 
@@ -211,7 +236,7 @@ function checkInputsCLI() {
   case "MULTIBID":
     checkParamsMultiBid();
     break;
-  case "GETCLAIMABLEHEZ":
+  case "GETHEZBALANCES":
     break;
   case "CLAIMHEZ":
     break;
@@ -232,7 +257,7 @@ function checkParamsBid() {
   checkParam(slot, "slot");
   checkParam(bidAmount, "bidAmount");
   if (units != "wei" && units != "ether") {
-    throw new Error("units must be ether or wei, default: wei");
+    throw new Error("units must be ether or wei, default: ether");
   }
   
 }
@@ -246,7 +271,7 @@ function checkParamsMultiBid() {
   checkParam(slotSets, "slotSets");
 
   if (units != "wei" && units != "ether") {
-    throw new Error("units must be ether or wei, default: wei");
+    throw new Error("units must be ether or wei, default: ether");
   }
   
   if(slotSets.length != 6) {
