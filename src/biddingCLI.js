@@ -4,7 +4,7 @@ const { ethers } = require("ethers");
 
 var yargs = require("yargs")
   .usage(`
-cli <command> <options> 
+cli <command> <options>
 
 commands
 ========
@@ -19,7 +19,7 @@ commands
           first slot to check current bidding price
       --endingSlot <slot>
           last slot to check current bidding price
-  
+
     cli bid <options>
         Bid for a slot
     --slot <slot>
@@ -51,7 +51,7 @@ commands
         amount of tokens to transfer to the Auction
     --units <units>
         units in wich the minBid, maxBid, amount and bidAmount are expressed: wei or ether supported  (default ether)
-  
+
     cli getHezBalances
         Display the current HEZ balance of the ethereum account and inside the HermezAuction contract
 
@@ -78,7 +78,7 @@ const url = argv.url;
 const slot = argv.slot;
 const startingSlot = argv.startingSlot;
 const endingSlot = argv.endingSlot;
-const slotSets = argv.slotSets ? slotSets.split(",") : [true, true, true, true, true, true];;
+const slotSets = argv.slotSets ? slotSets.split(",") : [true, true, true, true, true, true];
 const usePermit = argv.usePermit;
 const units = argv.units;
 
@@ -96,8 +96,8 @@ if (units == "ether") {
 
 async function main() {
   const provider = new ethers.providers.JsonRpcProvider(process.env.NODE_ETHEREUM_URL);
-  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY_CLI_BIDDING, provider)  
- 
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY_CLI_BIDDING, provider)
+
   // get auction protocol
   const artifactAuction = require(path.join(__dirname, `../config/artifacts/HermezAuctionProtocol.json`))
   const HermezAuctionContract = new ethers.Contract(process.env.HERMEZ_AUCTION_ADDRESS, artifactAuction.abi, provider);
@@ -154,7 +154,7 @@ async function main() {
         nonce,
         deadline
       );
-  
+
       const ABIbid = [
         "function permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
       ];
@@ -175,7 +175,7 @@ async function main() {
   if(command === "BID") {
     try {
       const res = await HermezAuctionContract.connect(wallet).processBid(
-        amount, 
+        amount,
         slot,
         bidAmount,
         dataPermit
@@ -185,12 +185,12 @@ async function main() {
       console.log("gas estimation failed")
       const jsonError = JSON.parse(error.error.error.body);
       throw new Error(jsonError.error.message);
-    } 
+    }
   }
   else if(command === "MULTIBID") {
     try {
       const res = await HermezAuctionContract.connect(wallet).processMultiBid(
-        amount, 
+        amount,
         startingSlot,
         endingSlot,
         slotSets,
@@ -221,7 +221,7 @@ async function main() {
       console.log("gas estimation failed")
       const jsonError = JSON.parse(error.error.error.body);
       throw new Error(jsonError.error.message);
-    } 
+    }
   }
 }
 
@@ -259,7 +259,7 @@ function checkParamsBid() {
   if (units != "wei" && units != "ether") {
     throw new Error("units must be ether or wei, default: ether");
   }
-  
+
 }
 
 function checkParamsMultiBid() {
@@ -273,7 +273,7 @@ function checkParamsMultiBid() {
   if (units != "wei" && units != "ether") {
     throw new Error("units must be ether or wei, default: ether");
   }
-  
+
   if(slotSets.length != 6) {
     console.log("slotSets must have 6 positions\n\n");
     throw new Error("Incorrect parameters");
@@ -310,7 +310,7 @@ function printEtherscanTx(res, chainId) {
     console.log("Transaction receipt")
     printEtherscanTx(res, network.chainId);
   }
-}  
+}
 
 async function createPermitSignature(hardhatToken, wallet, spenderAddress, value, nonce, deadline) {
   const digest = await createPermitDigest(
@@ -338,7 +338,7 @@ async function createPermitSignature(hardhatToken, wallet, spenderAddress, value
     s,
   };
 }
-  
+
 
 const PERMIT_TYPEHASH = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"));
 async function createPermitDigest(token, owner, spender, value, nonce, deadline) {

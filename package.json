@@ -2,7 +2,7 @@
   "name": "governance_tool",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/biddingCLI.js",
   "scripts": {},
   "keywords": [],
   "author": "",
