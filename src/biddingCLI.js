@@ -59,7 +59,7 @@ commands
       Claim the pending HEZ inside HermezAuction contract
 
     cli currentbids
-       Display the current bids, in wich slot and the HEZ amount
+       Display the current bids information starting from the actual slot, that were done by the wallet.
     --all <bool>
        true if the want to display all the current bids, false for only display the wallet current bids (default false)
 `)
