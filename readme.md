@@ -46,7 +46,7 @@ To understand better how the auction works, see in the [documentation](https://d
 Register a coordinator in the auction with a given URL. In order to make bids a coordinator must be registred first
 
 ### Options
-- URL `[-url | --url] <URL>`
+- URL `[--url] <URL>`
 
 ```bash=
 node src/biddingCLI.js register --url http://www.example.com
@@ -60,7 +60,7 @@ If no slots range specified, the 5 first open slots will be displayed.
 HEZ costs are displayed in the base unit, so, multiplied by the number of decimals wich is 1e18
 
 ### Options
-- startingSlot `[-st | --startingSlot] <slot>` (optional)
+- startingSlot `[--st | --startingSlot] <slot>` (optional)
 - endingSlot `[-e | --endingSlot] <slot>` (optional)
 
 
@@ -119,11 +119,11 @@ In case that the user already approve enough tokens to make the `amount` transfe
 The units are by default `ether`, this means that all the amounts are multiplied by `1e18`. The user could choose `wei` instead, where the amounts are not multiplied.
 
 #### Options
-- startingSlot `[-st | --startingSlot] <slot>` 
+- startingSlot `[--st | --startingSlot] <slot>` 
 - endingSlot `[-e | --endingSlot] <slot>` 
-- slotSets `[-ss | --slotSets] <bool[6]>` (optional)
-- maxBid `[-max | --maxBid] <token amount>` 
-- minBid `[-min | --minBid] <token amount>` 
+- slotSets `[--ss | --slotSets] <bool[6]>` (optional)
+- maxBid `[--max | --maxBid] <token amount>` 
+- minBid `[--min | --minBid] <token amount>` 
 - amount `[-a | --amount] <token amount>` 
 - usePermit `[-p | --usePermit] <bool>` (default: true)
 - units `[-u | --units] <"ether" || "wei">` (default: "ether")
