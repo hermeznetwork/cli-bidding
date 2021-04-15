@@ -14,7 +14,7 @@
     ```
     Your `PRIVATE_KEY_CLI_BIDDING` should be an address with `ether` to pay the gas for the transactions, and `HEZ` to pay the bid costs
 2. `npm install`
-3. Register an operator in the auction with :`node src/biddingCLI.js register --url http://www.example.com`
+3. Register an operator in the auction with :`node src/biddingCLI.js register --url https://www.example.com`
 4. Display the information regarding the current open slots and current bidding price with: `node src/biddingCLI.js slotinfo`
 5. Bid for a slot X, with Y amount: `node src/biddingCLI.js bid --amount Y --slot X --bidAmount Y`
 
@@ -45,11 +45,13 @@ To understand better how the auction works, see in the [documentation](https://d
 ## Register <a id="3"></a>
 Register a coordinator in the auction with a given URL. In order to make bids a coordinator must be registred first
 
+> :warning: Be aware of using `https`
+
 ### Options
 - URL `[--url] <URL>`
 
 ```bash=
-node src/biddingCLI.js register --url http://www.example.com
+node src/biddingCLI.js register --url https://www.example.com
 ```
 
 ## Slotinfo  <a id="4"></a>

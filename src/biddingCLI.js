@@ -57,6 +57,11 @@ commands
 
     cli claimhez
       Claim the pending HEZ inside HermezAuction contract
+
+    cli currentbids
+       Display the current bids, in wich slot and the HEZ amount
+    --all <bool>
+       true if the want to display all the current bids, false for only display the wallet current bids (default false)
 `)
 
 .option("url", { alias: "url", describe: "url of the coordinator", type: "string", demandOption: false })
@@ -69,7 +74,8 @@ commands
 .option("max", { alias: "maxBid", describe: "maximum bid that is allowed", type: "string", demandOption: false })
 .option("min", { alias: "minBid", describe: "minimum that you want to bid", type: "string", demandOption: false })
 .option("p", { alias: "usePermit", describe: "enable permit feature (default true)", type: "boolean", demandOption: false, default: true })
-.option("u", { alias: "units", describe: "choose unit type, wei or ether supported", type: "string", demandOption: false, default: "ether" });
+.option("u", { alias: "units", describe: "choose unit type, wei or ether supported", type: "string", demandOption: false, default: "ether" })
+.option("all", { alias: "all", describe: "bool if the user want to display only his bids or all the current bids", type: "bool", demandOption: false, default: false });
 
 
 const argv = yargs.argv;
@@ -81,6 +87,7 @@ const endingSlot = argv.endingSlot;
 const slotSets = argv.slotSets ? slotSets.split(",") : [true, true, true, true, true, true];;
 const usePermit = argv.usePermit;
 const units = argv.units;
+const allBool = argv.all;
 
 let amount = argv.amount;
 let bidAmount = argv.bidAmount;
@@ -108,7 +115,7 @@ async function main() {
   const network = await provider.getNetwork();
   checkInputsCLI();
 
-  if(command === "SLOTINFO") {
+  if (command === "SLOTINFO") {
     const currentSlot = (await HermezAuctionContract.getCurrentSlotNumber()).toNumber();
     const closedSlots =  await HermezAuctionContract.getClosedAuctionSlots()
     const firstBiddableSlot = currentSlot + closedSlots + 1
@@ -129,6 +136,39 @@ async function main() {
         console.log(`Minimum bid for ${i}: ${ethers.utils.formatEther(currentMinBid)} HEZ`)
       }
     }
+  }
+
+  if (command === "CURRENTBIDS") {
+    const currentSlot = (await HermezAuctionContract.getCurrentSlotNumber()).toNumber();
+    const slots = {};
+
+    if (allBool) {
+      const filter = HermezAuctionContract.filters.NewBid(null, null, null);
+      let eventsBid = await HermezAuctionContract.queryFilter(filter, 0, "latest");
+      for( let i = 0; i < eventsBid.length; i++) {
+        const slot = eventsBid[i].args.slot
+        if (slot > currentSlot && !slots[slot]) {
+          const slotState = await HermezAuctionContract.slots(slot) 
+          slots[slot] = slotState.bidAmount;
+        }
+      }
+    } else {
+      const filter = HermezAuctionContract.filters.NewBid(null, null, wallet.address);
+      let eventsBid = await HermezAuctionContract.queryFilter(filter, 0, "latest");
+      for( let i = 0; i < eventsBid.length; i++) {
+        const slot = eventsBid[i].args.slot
+        if (slot > currentSlot && !slots[slot]) {
+          const slotState = await HermezAuctionContract.slots(slot) 
+          if (slotState.bidder == wallet.address) {
+            slots[slot] = slotState.bidAmount;
+          }
+        }
+      }
+    }
+    console.log("current slots bidded")
+    Object.keys(slots).forEach( slot => {
+      console.log(`Slot : ${slot} bidAmount: ${ethers.utils.formatEther(slots[slot])} HEZ`)
+    });
   }
 
   if(command === "REGISTER") {
@@ -242,6 +282,8 @@ function checkInputsCLI() {
     break;
   case "SLOTINFO":
     break;
+  case "CURRENTBIDS":
+    break;
   default:
     yargs.showHelp();
   }
@@ -296,7 +338,7 @@ main()
     process.exit(1);
   });
 
-function printEtherscanTx(res, chainId) {
+async function printEtherscanTx(res, chainId) {
   if(chainId == 1) {
     console.log("Transaction submitted, you can see it here:")
     console.log(`https://etherscan.io/tx/${res.hash}`)
@@ -306,9 +348,9 @@ function printEtherscanTx(res, chainId) {
   } else if(chainId == 5) {
     console.log("Transaction submitted, you can see it here:")
     console.log(`https://goerli.etherscan.io/tx/${res.hash}`)
-  } else {
+  } else { // suppose test enviroment
     console.log("Transaction receipt")
-    printEtherscanTx(res, network.chainId);
+    console.log(await res.wait());
   }
 }  
 
