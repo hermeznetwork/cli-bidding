@@ -1,0 +1,17 @@
+{
+    "1": {
+        "hermezAuctionAddress":"0x15468b45eD46C8383F5c0b1b6Cf2EcF403C2AeC2",
+        "hezTokenAddress":"0xEEF9f339514298C6A857EfCfC1A762aF84438dEE",
+        "networkName": "mainnet"
+    },
+    "4": {
+        "hermezAuctionAddress":"0x0a8a6D65Ad9046c2a57a5Ca8Bab2ae9c3345316d",
+        "hezTokenAddress":"0x2521Bc90B4f5Fb9a8D61278197e5FF5cDbc4FBF2",
+        "networkName": "rinkeby"
+    },
+    "5": {
+        "hermezAuctionAddress":"0x1D5c3Dd2003118743D596D7DB7EA07de6C90fB20",
+        "hezTokenAddress":"0x55a1Db90A5753e6Ff50FD018d7E648d58A081486",
+        "networkName": "goerli"
+    }
+}

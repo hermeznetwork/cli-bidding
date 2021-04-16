@@ -1,4 +1,5 @@
 # Table of Contents
+
 1. [Quick Guide](#1)
 2. [Auction](#9)
 3. [Usage](#2)
@@ -6,20 +7,24 @@
 ## Quick Guide <a id="1"></a>
 
 1. Edit the `config/.env.example` and save it as `config/.env`:
-    ```
-        NODE_ETHEREUM_URL=<you_ethereum_node>
-        PRIVATE_KEY_CLI_BIDDING=<your_private_key>
-        HERMEZ_AUCTION_ADDRESS=<Hermez_auction_address>
-        HEZ_TOKEN_ADDRESS=<Hez_token_address>
-    ```
-    > Your `PRIVATE_KEY_CLI_BIDDING` should have `ether` to pay the gas for the ethereum transactions and `HEZ` to pay the bid costs
+
+   ```
+       NODE_ETHEREUM_URL=<you_ethereum_node>
+       PRIVATE_KEY_CLI_BIDDING=<your_private_key>
+   ```
+
+   > Your `PRIVATE_KEY_CLI_BIDDING` should have `ether` to pay the gas for the ethereum transactions and `HEZ` to pay the bid costs.
+
+   > If you will use a custom contracts, you should edit the `config/addressSC` file and add your smart contract address in the corresponding network id.
+
 2. `npm i`
 3. Register an operator in the auction with: `node src/biddingCLI.js register --url https://www.example.com`
 4. Display the information regarding the current open slots and current bidding price with: `node src/biddingCLI.js slotinfo`
-5. Bid for a slot X with Y amount: `node src/biddingCLI.js bid --amount Y --slot X --bidAmount Y`
+5. Bid for a slot X with Y amount: `node src/biddingCLI.js bid --amount Y --slot X --bidAmount Y` [more information in usage](#5)
 
- -----
- -----
+---
+
+---
 
 ## Auction <a id="9"></a>
 
@@ -29,33 +34,38 @@ The best bid wins the slot and therefore has the right to forge as many [batches
 This cli aims to easily interact with the Hermez Auction smart contract to facilitate this bidding task.
 Further information on the auction mechanism can be found in [documentation](https://docs.hermez.io/#/developers/protocol/consensus/consensus?id=auction)
 
- -----
- -----
+---
+
+---
 
 ## Usage <a id="2"></a>
 
 ### Commands
+
 - [register](#3): Register a coordinator in the HermezAuction contract
 - [slotinfo](#4): Display the information regarding the current open slots and current bidding price
-- [bid](#5):  Bid for a slot
+- [bid](#5): Bid for a slot
 - [multibid](#6): Bid for multiple slots
 - [getHezBalances](#7): Display the current HEZ balance of the ethereum account and inside the HermezAuction contract
 - [claimhez](#8): Claim the HEZ inside HermezAuction contract
 - [Currentbids](#9): isplay the current bids information starting from the actual slot, that were done by the wallet.
 
 ### Register <a id="3"></a>
+
 Register a coordinator in the auction with a given URL. In order to make bids a coordinator must be registered first
 
 > :warning: Be aware of using `https`
 
-### Options
+#### Options
+
 - URL `[--url] <URL>`
 
 ```bash=
 node src/biddingCLI.js register --url https://www.example.com
 ```
 
-### Slotinfo  <a id="4"></a>
+### Slotinfo <a id="4"></a>
+
 Display the information regarding the current open slots and current bidding price.
 Optionally, a `startingSlot` and `endingSlot` to check the bidding price for that slot range. The range must be inside the `openSlots`.
 
@@ -63,9 +73,9 @@ If no slots range is specified, the 5 first open slots will be displayed.
 HEZ amounts are displayed dividing the amount by its decimals, wich are 18.
 
 #### Options
+
 - startingSlot `[--st | --startingSlot] <slot>` (optional)
 - endingSlot `[-e | --endingSlot] <slot>` (optional)
-
 
 ```bash=
 node src/biddingCLI.js slotinfo --startingSlot 4150 --endingSlot 4170
@@ -77,7 +87,8 @@ or
 node src/biddingCLI.js slotinfo
 ```
 
-### Bid  <a id="5"></a>
+### Bid <a id="5"></a>
+
 Bid for a especific `slot`. The `bidAmount` is the HEZ amount that will be bidded for that `slot`. The `amount` is the HEZ that will be transfer to the HermezAuction smart contract
 The `amount` and `bidAmount` are different parameters because there's some cases when the user could choose to not transfer HEZ to the auction (`amount = 0`) because there's already enough pending balance in the contract (see [getHezBalances](#7)).
 
@@ -87,22 +98,26 @@ In case that the user already approve enough tokens to make the `amount` transfe
 The units are by default `ether`, this means that all the input amounts are multiplied by `1e18`. The user could choose `wei` instead, where the amounts are not multiplied.
 
 #### Options
+
 - slot `[-s | --slot] <slot>`
 - bidAmount `[-b | --bidAmount] <token amount>`
 - amount `[-a | --amount] <token amount>`
 - usePermit `[-p | --usePermit] <bool>` (default: `true`)
 - units `[-u | --units] <"ether" || "wei">` (default: `ether`)
-)
+  )
 
 ```bash=
 node src/biddingCLI.js bid --amount 1 --slot 100 --bidAmount 1
 ```
+
 or equivalent:
+
 ```bash=
 node src/biddingCLI.js bid --amount 1000000000000000000 --slot 100 --bidAmount 1000000000000000000 --units "wei"
 ```
 
-### MultiBid  <a id="6"></a>
+### MultiBid <a id="6"></a>
+
 Bid for a set of slots.
 User must define the `StartingSlot` and `endingSlot`. The call will bid for that range of slots, both included.
 
@@ -122,6 +137,7 @@ In case that the user already approve enough tokens to make the `amount` transfe
 The units are by default `ether`, this means that all the amounts are multiplied by `1e18`. The user could choose `wei` instead, where the amounts are not multiplied.
 
 #### Options
+
 - startingSlot `[--st | --startingSlot] <slot>`
 - endingSlot `[-e | --endingSlot] <slot>`
 - slotSets `[--ss | --slotSets] <bool[6]>` (optional)
@@ -137,26 +153,31 @@ The units are by default `ether`, this means that all the amounts are multiplied
 node src/biddingCLI.js multibid --amount 10 --startingSlot 22 --endingSlot 27 --slotSet true,true,true,true,false,false --maxBid 4 --minBid 3
 ```
 
+### GetHezBalances <a id="7"></a>
 
-### GetHezBalances  <a id="7"></a>
 Display the current HEZ balance of the ethereum account and inside the HermezAuction contract
 
 ```bash=
 node src/biddingCLI.js getHezBalances
 ```
 
-### Claimhez  <a id="8"></a>
+### Claimhez <a id="8"></a>
+
 Claim the pending HEZ inside HermezAuction contract
 
 ```bash=
 node src/biddingCLI.js claimhez
 ```
-### Currentbids  <a id="9"></a>
-Display the current bids information starting from the actual slot, that were done by the wallet.
-If the option `--all true` is activated, display all the current bids from all the address instead.
+
+### CurrentWinningbids <a id="9"></a>
+
+Display the current winning bids information starting from the actual slot, that were done by the wallet.
+If the option `--all true` is activated, display all the current winning bids from all the address instead.
+
 #### Options
+
 - all `[--all] <bool>` (default false)
 
 ```bash=
-node src/biddingCLI.js currentbids
+node src/biddingCLI.js currentwinningbids
 ```
