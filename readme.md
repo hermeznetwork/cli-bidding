@@ -3,6 +3,7 @@
 1. [Quick Guide](#1)
 2. [Auction](#9)
 3. [Usage](#2)
+4. [Test](#10)
 
 ## Quick Guide <a id="1"></a>
 
@@ -181,3 +182,11 @@ If the option `--all true` is activated, display all the current winning bids fr
 ```bash=
 node src/biddingCLI.js currentwinningbids
 ```
+
+## Test <a id="10"></a>
+
+How to run the test in root repository:
+
+1. `npm i`
+2. `npx ganache-cli`
+3. Open another terminal and execute `npx mocha test/biddingCLI.test.js`

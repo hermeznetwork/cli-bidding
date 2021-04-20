@@ -181,16 +181,16 @@ async function main() {
         const res = await HermezAuctionContract
             .connect(wallet)
             .setCoordinator(wallet.address, url);
-        printEtherscanTx(res, network.chainId);
+        await printEtherscanTx(res, network.chainId);
     }
 
     let dataPermit = "0x";
 
     if(command === "BID" || command === "MULTIBID") {
-    // Create Permit Signature
-        const nonce = await HezContract.nonces(wallet.getAddress());
-        const deadline = ethers.constants.MaxUint256;
         if(usePermit) {
+            // Create Permit Signature
+            const nonce = await HezContract.nonces(wallet.getAddress());
+            const deadline = ethers.constants.MaxUint256;
             const {v,r,s} = await createPermitSignature(
                 HezContract,
                 wallet,
@@ -225,7 +225,7 @@ async function main() {
                 bidAmount,
                 dataPermit
             );
-            printEtherscanTx(res, network.chainId);
+            await printEtherscanTx(res, network.chainId);
         } catch (error) {
             console.log("gas estimation failed");
             const jsonError = JSON.parse(error.error.error.body);
@@ -243,7 +243,7 @@ async function main() {
                 minBid,
                 dataPermit
             );
-            printEtherscanTx(res, network.chainId);
+            await printEtherscanTx(res, network.chainId);
         } catch (error) {
             console.log("gas estimation failed");
             const jsonError = JSON.parse(error.error.error.body);
@@ -261,7 +261,7 @@ async function main() {
     else if(command === "CLAIMHEZ") {
         try {
             const res = await HermezAuctionContract.connect(wallet).claimHEZ();
-            printEtherscanTx(res, network.chainId);
+            await printEtherscanTx(res, network.chainId);
         } catch (error) {
             console.log("gas estimation failed");
             const jsonError = JSON.parse(error.error.error.body);
@@ -334,8 +334,6 @@ function checkParam(param, name) {
     }
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main()
     .then(() => process.exit(0))
     .catch(error => {
@@ -343,6 +341,8 @@ main()
         process.exit(1);
     });
 
+
+// Helpers functions
 async function printEtherscanTx(res, chainId) {
     if(chainId == 1) {
         console.log("Transaction submitted, you can see it here:");
@@ -369,7 +369,7 @@ async function createPermitSignature(hardhatToken, wallet, spenderAddress, value
         deadline
     );
 
-    // must be a wallet not a signer!
+    // Must be a wallet not a signer!
     const ownerPrivateKey = wallet.privateKey;
     let signingKey = new ethers.utils.SigningKey(ownerPrivateKey);
 
