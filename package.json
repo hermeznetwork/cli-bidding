@@ -10,6 +10,7 @@
   "dependencies": {
     "dotenv": "^8.2.0",
     "ethers": "^5.0.12",
+    "ffjavascript": "^0.2.35",
     "yargs": "^16.2.0"
   },
   "devDependencies": {

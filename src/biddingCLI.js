@@ -1,6 +1,7 @@
 const path = require("path");
 require("dotenv").config({path:path.join(__dirname, "../config/.env")});
 const { ethers } = require("ethers");
+const { getGasPrice } = require("./utils");
 const addressSC = require("../config/addressSC.json");
 var yargs = require("yargs")
     .usage(`
@@ -75,6 +76,7 @@ commands
     .option("min", { alias: "minBid", describe: "minimum that you want to bid", type: "string", demandOption: false })
     .option("p", { alias: "usePermit", describe: "enable permit feature (default true)", type: "boolean", demandOption: false, default: true })
     .option("u", { alias: "units", describe: "choose unit type, wei or ether supported", type: "string", demandOption: false, default: "ether" })
+    .option("m", { alias: "multiplier", describe: "gasPrice multiplier", type: "number", demandOption: false, default: 1 })
     .option("all", { alias: "all", describe: "bool if the user want to display only his bids or all the current bids", type: "bool", demandOption: false, default: false });
 
 
@@ -88,6 +90,7 @@ const slotSets = argv.slotSets ? slotSets.split(",") : [true, true, true, true, 
 const usePermit = argv.usePermit;
 const units = argv.units;
 const allBool = argv.all;
+const multiplier = argv.multiplier;
 
 let amount = argv.amount;
 let bidAmount = argv.bidAmount;
@@ -177,10 +180,15 @@ async function main() {
     }
 
     if(command === "REGISTER") {
+    // set options
+    const options = {
+        gasPrice: await getGasPrice(multiplier, provider)
+    }
+
     // register coordinator
         const res = await HermezAuctionContract
             .connect(wallet)
-            .setCoordinator(wallet.address, url);
+            .setCoordinator(wallet.address, url, options);
         await printEtherscanTx(res, network.chainId);
     }
 
@@ -219,11 +227,17 @@ async function main() {
 
     if(command === "BID") {
         try {
+            // set options
+            const options = {
+                gasPrice: await getGasPrice(multiplier, provider)
+            }
+
             const res = await HermezAuctionContract.connect(wallet).processBid(
                 amount,
                 slot,
                 bidAmount,
-                dataPermit
+                dataPermit,
+                options
             );
             await printEtherscanTx(res, network.chainId);
         } catch (error) {
@@ -234,6 +248,11 @@ async function main() {
     }
     else if(command === "MULTIBID") {
         try {
+            // set options
+            const options = {
+                gasPrice: await getGasPrice(multiplier, provider)
+            }
+
             const res = await HermezAuctionContract.connect(wallet).processMultiBid(
                 amount,
                 startingSlot,
@@ -241,7 +260,8 @@ async function main() {
                 slotSets,
                 maxBid,
                 minBid,
-                dataPermit
+                dataPermit,
+                options
             );
             await printEtherscanTx(res, network.chainId);
         } catch (error) {
@@ -260,7 +280,12 @@ async function main() {
     }
     else if(command === "CLAIMHEZ") {
         try {
-            const res = await HermezAuctionContract.connect(wallet).claimHEZ();
+            // set options
+            const options = {
+                gasPrice: await getGasPrice(multiplier, provider)
+            }
+
+            const res = await HermezAuctionContract.connect(wallet).claimHEZ(options);
             await printEtherscanTx(res, network.chainId);
         } catch (error) {
             console.log("gas estimation failed");
